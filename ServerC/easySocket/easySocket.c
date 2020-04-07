@@ -28,10 +28,15 @@ int easySocket_server_creation(char *address, int port, int max_connection){
     if(sock_id == easySocket_NO_VAL){
         return easySocket_NO_VAL;
     }
-
+    
     socket_address.sin_family = AF_INET;
     socket_address.sin_addr.s_addr = inet_addr(address);
     socket_address.sin_port = htons(port);
+
+    if (setsockopt(sock_id, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0){
+        return easySocket_NO_VAL;
+    }
+
     /*errno = 0;*/
     /* We bind the sock_id with the socket_address */
     if(bind(sock_id, (struct sockaddr*)&socket_address, easySocket_size_addr) == easySocket_NO_VAL){
@@ -108,8 +113,8 @@ int easySocket_client_connect(int sock_id, char *address, int port){
 /**
  * Send a message to a client (client_id)
  */
-int easySocket_send_message(int dest_id, void *message){
-    return send(dest_id, message, strlen(message) + 1, 0);
+int easySocket_send_message(int dest_id, void *message, size_t msg_len){
+    return send(dest_id, message, msg_len, 0);
 }
 
 /**

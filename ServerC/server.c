@@ -23,16 +23,16 @@
 #define MSG_SIZE 10000
 
 
-#define WEB_SOCKET_PROTOCOLE_ANSWER "HTTP/1.1 101 Switching Protocols\nUpgrade: websocket\nConnection: Upgrade\nSec-WebSocket-Accept:"
+#define WEB_SOCKET_PROTOCOLE_ANSWER "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept:"
 
-#define PROT_1 "HTTP/1.1 101 Switching Protocols\n"
-#define PROT_2 "Upgrade: websocket\n"
-#define PROT_3 "Connection: Upgrade\n"
+#define PROT_1 "HTTP/1.1 101 Switching Protocols\r\n"
+#define PROT_2 "Upgrade: websocket\r\n"
+#define PROT_3 "Connection: Upgrade\r\n"
 #define PROT_4 "Sec-WebSocket-Accept: "
 
 #define GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
-#define NEW_LINE_SEP "\n"
+#define NEW_LINE_SEP "\r\n"
 #define SPACE_SEP " "
 #define WEBSOCKET_KEY "Sec-WebSocket-Key: "
 
@@ -218,14 +218,11 @@ int main(){
     char *response_header;
     unsigned long int data_len;
     byte *data;
-    // byte *to_send_df;
-    // unsigned long int to_send_df_size;
+    byte *to_send_df;
+    unsigned long int to_send_df_size;
     char msg_read[MSG_SIZE];
-    // byte opcode;
+    byte opcode;
     int is_sent;
-    // unsigned long int i;
-
-    byte test_msg[2];
 
     add_event_listener(SIGINT, close_server);
 
@@ -267,7 +264,7 @@ int main(){
 
     fprintf(stdout, "\n TO SEND 2:\n%s", strdup(response_header));
     /* Sending the handshake response */
-    easySocket_send_message(client_id, response_header);
+    websocket_send(client_id, response_header, strlen(response_header));
 
 
     fprintf(stdout, "\nHandshake finished\n");
@@ -276,28 +273,16 @@ int main(){
     fprintf(stdout, "\n%s\n", data);
     fprintf(stdout, "\n%ld\n", data_len);
 
-    // opcode = websocket_create_opcode(1, 0, 0, 0, 1);
+    opcode = websocket_create_opcode(1, 0, 0, 0, 1);
 
-    // bitByte_display(&opcode);
+    to_send_df = websocket_create_dataframe(data_len, data, opcode, &to_send_df_size);
 
-    // to_send_df = websocket_create_dataframe(data_len, data, opcode, &to_send_df_size);
-    // fprintf(stdout, "to_send_df_size: %ld\n", to_send_df_size);
-
-    // for(i = 0; i < to_send_df_size; i++){
-    //     bitByte_display(&to_send_df[i]);
-    //     fprintf(stdout, "\n");
-    // }
-
-    test_msg[0] = 129;
-    test_msg[1] = 0;
-
-    is_sent = websocket_send_dataframe(client_id, test_msg, 3);
+    is_sent = websocket_send(client_id, (byte *)to_send_df, to_send_df_size);
 
 
     fprintf(stdout, "is_sent: %d\n", is_sent);
-    fprintf(stdout, "\n");
 
-    // free(to_send_df);
+    free(to_send_df);
     free(response_header);
     close(sock_id);
     close(client_id);

@@ -60,7 +60,7 @@ int easySocket_client_connect(int sock_id, char *address, int port);
  * Send a message to a client (client_id)
  * Return easySocket_NO_VAL if failed
  */
-int easySocket_send_message(int dest_id, void *message);
+int easySocket_send_message(int dest_id, void *message, size_t msg_len);
 
 /**
  * Set a socket to non-blocking

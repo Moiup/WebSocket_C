@@ -96,9 +96,9 @@ byte websocket_create_opcode(int fin, int rsv1, int rsv2, int rsv3, int opcode);
 byte *websocket_create_dataframe(unsigned long int data_len, byte *data, byte opcode, unsigned long int *dataframe_size);
 
 /**
- * Send a dataframe
+ * Send data
  * Return 0 if nothing sent
  */
-int websocket_send_dataframe(int sock_id, byte *dataframe, unsigned long int dataframe_size);
+int websocket_send(int sock_id, void *data, size_t data_size);
 
 #endif

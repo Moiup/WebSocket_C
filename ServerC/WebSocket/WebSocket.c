@@ -24,7 +24,6 @@ unsigned long int websocket_playload_len_read(int client_id, byte playload){
     }
     if(playload == WS_PLAYLOAD_16){
         is_read = easySocket_read(client_id, data_len_16, WS_PLAYLOAD_16_SIZE);
-        // fprintf(stdout, "\nData len 16: %d\n", data_len_16);
         if(is_read){
             return (unsigned long int)(data_len_16[0] * WS_2_POW_8 + data_len_16[1]);
         }
@@ -32,7 +31,6 @@ unsigned long int websocket_playload_len_read(int client_id, byte playload){
     }
     if(playload == WS_PLAYLOAD_64){
         is_read = easySocket_read(client_id, data_len_64, WS_PLAYLOAD_64_SIZE);
-        // fprintf(stdout, "\nData len 16: %d\n", data_len_16);
         if(is_read){
             return (unsigned long int)(data_len_64[0] * WS_2_POW_56 + data_len_64[1] * WS_2_POW_48 + data_len_64[2] * WS_2_POW_40 + data_len_64[3] * WS_2_POW_32 + data_len_64[4] * WS_2_POW_24 + data_len_64[5] * WS_2_POW_16 + data_len_64[6] * WS_2_POW_8 + data_len_64[7]);
         }
@@ -194,29 +192,31 @@ byte *websocket_create_dataframe(unsigned long int data_len, byte *data, byte op
         fprintf(stdout, "TEST 2\n");
     }
 
+    df[0] = opcode;
+    df[1] = playload_len;
 
-    for(i = 0; i <  BITBYTE_SIZE; i++){
-        if(bitByte_get(&opcode, i)){
-            bitByte_set_bit(&df[0], i);
-        }
-        else{
-            bitByte_reset_bit(&df[0], i);
-        }
-        if(bitByte_get(&playload_len, i)){
-            bitByte_set_bit(&df[1], i);
-        }
-        else{
-            bitByte_reset_bit(&df[1], i);
-        }
-    }
+    // for(i = 0; i <  BITBYTE_SIZE; i++){
+    //     if(bitByte_get(&opcode, i)){
+    //         bitByte_set_bit(&df[0], i);
+    //     }
+    //     else{
+    //         bitByte_reset_bit(&df[0], i);
+    //     }
+    //     if(bitByte_get(&playload_len, i)){
+    //         bitByte_set_bit(&df[1], i);
+    //     }
+    //     else{
+    //         bitByte_reset_bit(&df[1], i);
+    //     }
+    // }
 
     return df;
 }
 
 /**
- * Send a dataframe
+ * Send data
  * Return 0 if nothing sent
  */
-int websocket_send_dataframe(int sock_id, byte *dataframe, unsigned long int dataframe_size){
-    return send(sock_id, (byte *)dataframe, dataframe_size, 0);
+int websocket_send(int sock_id, void *data, size_t data_size){
+    return send(sock_id, data, data_size, 0);
 }

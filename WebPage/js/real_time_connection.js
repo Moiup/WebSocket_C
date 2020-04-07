@@ -14,6 +14,7 @@ function webSocket(){
 
     socket.onmessage = function(event) {
         alert("test")
+        console.log(`received: ${event.data}`)
     }
 
     socket.onclose = function(){

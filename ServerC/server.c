@@ -16,7 +16,7 @@
 #include "WebSocket/WebSocket.h"
 #include <openssl/sha.h>
 
-#define SERVER_ADDRESS "192.168.1.80"
+#define SERVER_ADDRESS "127.0.0.1"
 #define SERVER_PORT 8000
 #define MAX_CONNECTION 15
 

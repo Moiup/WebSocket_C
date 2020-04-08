@@ -174,41 +174,86 @@ byte *websocket_create_dataframe(unsigned long int data_len, byte *data, byte op
     if(data_len < WS_PLAYLOAD_16){
         playload_len = data_len;
         *dataframe_size = WS_DF_BASE_SIZE_BYTES + data_len;
-        fprintf(stdout, "\ndata_len : %ld\n", data_len);
-        fprintf(stdout, "dataframe_size : %ld\n", *dataframe_size);
         df = (byte *)malloc(*dataframe_size);
         if(df == NULL){
-            fprintf(stderr, "(websocket_create_dataframe) Error allocating df\n");
-            exit(EXIT_FAILURE);
+            return NULL;
         }
-        bitByte_display(&playload_len);
-        fprintf(stdout, "\n");
-    
-        fprintf(stdout, "TEST 1\n");
+
+
         for(i = WS_DF_BASE_SIZE_BYTES, j = 0; i < *dataframe_size; i++,j++){
             df[i] = data[j];
-            fprintf(stdout, "TEST i: %c\n", (char)df[i]);
         }
-        fprintf(stdout, "TEST 2\n");
     }
+    else if(data_len <= BITBYTE_MAX_2_BYTE){
+        playload_len = WS_PLAYLOAD_16;
+        *dataframe_size = WS_DF_BASE_SIZE_BYTES + WS_PLAYLOAD_16_SIZE + data_len;
+        df = (byte *)malloc(*dataframe_size);
+        if(df == NULL){
+            return NULL;
+        }
+
+        // for(i = 0; i < sizeof(unsigned long int) * 8; i++){
+        //     fprintf(stdout, "%d", bitByte_get(&data_len, i));
+        // }
+        // fprintf(stdout, "\n");
+
+        /* Affecting the data size to each bytes */
+        df[WS_DF_BASE_SIZE_BYTES] = bitByte_get_byte(data_len, 1);
+        df[WS_DF_BASE_SIZE_BYTES + 1] = bitByte_get_byte(data_len, 0);
+
+
+        for(i = WS_DF_BASE_SIZE_BYTES + WS_PLAYLOAD_16_SIZE, j = 0; i < *dataframe_size; i++,j++){
+            df[i] = data[j];
+        }
+    }
+    else {
+        playload_len = WS_PLAYLOAD_64;
+        *dataframe_size = WS_DF_BASE_SIZE_BYTES + WS_PLAYLOAD_64_SIZE + data_len;
+        df = (byte *)malloc(*dataframe_size);
+        if(df == NULL){
+            return NULL;
+        }
+
+        // for(i = 0; i < sizeof(unsigned long int) * 8; i++){
+        //     fprintf(stdout, "%d", bitByte_get(&data_len, i));
+        // }
+        // fprintf(stdout, "\n");
+
+        /* Affecting the data size to each bytes */
+        df[WS_DF_BASE_SIZE_BYTES] = bitByte_get_byte(data_len, 7);
+        df[WS_DF_BASE_SIZE_BYTES + 1] = bitByte_get_byte(data_len, 6);
+        df[WS_DF_BASE_SIZE_BYTES + 2] = bitByte_get_byte(data_len, 5);
+        df[WS_DF_BASE_SIZE_BYTES + 3] = bitByte_get_byte(data_len, 4);
+        df[WS_DF_BASE_SIZE_BYTES + 4] = bitByte_get_byte(data_len, 3);
+        df[WS_DF_BASE_SIZE_BYTES + 5] = bitByte_get_byte(data_len, 2);
+        df[WS_DF_BASE_SIZE_BYTES + 6] = bitByte_get_byte(data_len, 1);
+        df[WS_DF_BASE_SIZE_BYTES + 7] = bitByte_get_byte(data_len, 0);
+
+        for(i = WS_DF_BASE_SIZE_BYTES + WS_PLAYLOAD_64_SIZE, j = 0; i < *dataframe_size; i++,j++){
+            df[i] = data[j];
+        }
+    }
+
+
+    
 
     df[0] = opcode;
     df[1] = playload_len;
 
-    // for(i = 0; i <  BITBYTE_SIZE; i++){
-    //     if(bitByte_get(&opcode, i)){
-    //         bitByte_set_bit(&df[0], i);
-    //     }
-    //     else{
-    //         bitByte_reset_bit(&df[0], i);
-    //     }
-    //     if(bitByte_get(&playload_len, i)){
-    //         bitByte_set_bit(&df[1], i);
-    //     }
-    //     else{
-    //         bitByte_reset_bit(&df[1], i);
-    //     }
-    // }
+    for(i = 0; i <  BITBYTE_SIZE; i++){
+        if(bitByte_get(&opcode, i)){
+            bitByte_set_bit(&df[0], i);
+        }
+        else{
+            bitByte_reset_bit(&df[0], i);
+        }
+        if(bitByte_get(&playload_len, i)){
+            bitByte_set_bit(&df[1], i);
+        }
+        else{
+            bitByte_reset_bit(&df[1], i);
+        }
+    }
 
     return df;
 }

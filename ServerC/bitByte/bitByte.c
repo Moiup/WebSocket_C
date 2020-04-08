@@ -43,6 +43,17 @@ void bitByte_init(byte *b){
     *b = 0;
 }
 
+/**
+ * Return the i th byte of a type 
+ */
+byte bitByte_get_byte(unsigned long int b, int i){
+    byte res;
+
+    res = b >> (i * BITBYTE_SIZE);
+
+    return res;
+}
+
 
 /**
  * Display all the bits contained in a byte

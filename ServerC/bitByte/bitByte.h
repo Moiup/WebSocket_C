@@ -18,6 +18,9 @@
 #define BITBYTE_FALSE 0
 #define BITBYTE_TRUE 1
 
+#define BITBYTE_MAX_BYTE 255
+#define BITBYTE_MAX_2_BYTE 65535
+
 /* Byte type */
 typedef unsigned char byte;
 
@@ -47,6 +50,10 @@ int bitByte_get(byte *b, int i);
  */
 void bitByte_init(byte *b);
 
+/**
+ * Return the i th byte of a type 
+ */
+byte bitByte_get_byte(unsigned long int b, int i);
 
 /**
  * Display all the bits contained in a byte

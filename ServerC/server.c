@@ -223,6 +223,7 @@ int main(){
     char msg_read[MSG_SIZE];
     byte opcode;
     int is_sent;
+    int i;
 
     add_event_listener(SIGINT, close_server);
 
@@ -279,6 +280,10 @@ int main(){
 
     is_sent = websocket_send(client_id, (byte *)to_send_df, to_send_df_size);
 
+    for(i = 0; i < 5; i++){
+        bitByte_display(&to_send_df[i]);
+        fprintf(stdout, "\n");
+    }
 
     fprintf(stdout, "is_sent: %d\n", is_sent);
 

@@ -11,6 +11,8 @@
 #define WEBSOCKET_H
 #include <stdlib.h>
 #include <stdio.h>
+#include <openssl/sha.h>
+#include "../stringDyn/stringDyn.h"
 #include "../bitByte/bitByte.h"
 #include "../easySocket/easySocket.h"
 
@@ -19,8 +21,25 @@
 #define WS_FALSE 0
 
 /********************/
+/* Header Info      */
+/********************/
+#define WS_PROT_1 "HTTP/1.1 101 Switching Protocols\r\n"
+#define WS_PROT_2 "Upgrade: websocket\r\n"
+#define WS_PROT_3 "Connection: Upgrade\r\n"
+#define WS_PROT_4 "Sec-WebSocket-Accept: "
+
+#define WS_GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+
+#define WS_NEW_LINE_SEP "\r\n"
+#define WS_SPACE_SEP " "
+#define WS_WEBSOCKET_KEY "Sec-WebSocket-Key: "
+
+/********************/
 /* Size definition  */
 /********************/
+#define WS_CLIENT_HANDSHAKE_SIZE 10000
+
+
 #define WS_FIN 1 /* 1 bit */
 #define WS_RSV1 1 /* 1 bit */
 #define WS_RSV2 1 /* 1 bit */
@@ -68,6 +87,17 @@
 /* Masking Key */
 /***************/
 #define MASKING_KEY_SIZE 4
+
+/**
+ * Reading and returning the handshake header received from the client
+ * Return NULL if error
+*/
+char *websocket_get_client_handshake(int client_id);
+
+/**
+ * Create the handshake header response
+*/
+char *websocket_handshake_header_response(char *request);
 
 /**
  * Return the length of the playload data

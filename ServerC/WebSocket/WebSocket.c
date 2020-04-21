@@ -10,6 +10,179 @@
 #include "WebSocket.h"
 
 /**
+ * Return the 
+*/
+size_t b64_encoded_size(size_t inlen)
+{
+	size_t ret;
+
+	ret = inlen;
+	if (inlen % 3 != 0)
+		ret += 3 - (inlen % 3);
+	ret /= 3;
+	ret *= 4;
+
+	return ret;
+}
+
+
+char *b64_encode(const unsigned char *in, size_t len)
+{
+    const char b64chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+	char   *out;
+	size_t  elen;
+	size_t  i;
+	size_t  j;
+	size_t  v;
+
+	if (in == NULL || len == 0)
+		return NULL;
+
+	elen = b64_encoded_size(len);
+	out  = (char *)malloc(sizeof(char) * (elen+1));
+	out[elen] = '\0';
+
+	for (i=0, j=0; i<len; i+=3, j+=4) {
+		v = in[i];
+		v = i+1 < len ? v << 8 | in[i+1] : v << 8;
+		v = i+2 < len ? v << 8 | in[i+2] : v << 8;
+
+		out[j]   = b64chars[(v >> 18) & 0x3F];
+		out[j+1] = b64chars[(v >> 12) & 0x3F];
+		if (i+1 < len) {
+			out[j+2] = b64chars[(v >> 6) & 0x3F];
+		} else {
+			out[j+2] = '=';
+		}
+		if (i+2 < len) {
+			out[j+3] = b64chars[v & 0x3F];
+		} else {
+			out[j+3] = '=';
+		}
+	}
+
+	return out;
+}
+
+/**
+ * Return the key stored in the handshake header
+*/
+char *get_sec_WebSocket_key(char *request){
+    int len = strlen(request);
+    int key_size;
+    int i;
+    int j;
+    int key_begin;
+    int is_found = 0;
+    int key_end;
+    int cpt;
+    char *key_header = NULL;
+    
+    i = 0;
+    while((i < len) && !is_found){
+        j = 0;
+        if(request[i] == WS_WEBSOCKET_KEY[j]){
+            j++;
+            while(request[i + j] == WS_WEBSOCKET_KEY[j]){
+                j++;
+                if(WS_WEBSOCKET_KEY[j] == '\0'){
+                    is_found = 1;
+                    key_begin = i;
+                    key_end = i + j;
+                    break;
+                }
+            }
+            i = i + j;
+        }
+        else{
+            i++;
+        }
+    }
+
+    cpt = 0;
+    while(request[key_end + cpt] != '\n'){
+        cpt++;
+    }
+
+    key_begin = key_end;
+    key_end = key_end + cpt;
+    key_size = key_end - key_begin;
+
+    key_header = (char *)malloc(sizeof(char) * key_size);
+    if(key_header == NULL){
+        return NULL;
+    }
+
+    for(i = key_begin, j=0; i < key_end; i++, j++){
+        key_header[j] = request[i]; 
+    }
+
+    key_header[key_size - 1] = '\0';
+
+    return key_header;
+}
+
+/**
+ * Create the handshake header response
+*/
+char *websocket_handshake_header_response(char *request){
+    unsigned char digest[SHA_DIGEST_LENGTH];
+    char *key_head = get_sec_WebSocket_key(request);
+    // char *key_head = strdup("dGhlIHNhbXBsZSBub25jZQ==");
+    unsigned char *unsigned_key;
+    char *concat_keys = stringDyn_concat_new(key_head, WS_GUID);
+    int data_len = strlen(concat_keys);
+    SHA_CTX shactx;
+    char *b64 = NULL;
+    char *header = NULL;
+
+    unsigned_key = (unsigned char *)concat_keys;
+
+    SHA1_Init(&shactx);
+    SHA1_Update(&shactx, unsigned_key, data_len);
+    SHA1_Final(digest, &shactx);
+
+    b64 = b64_encode(digest, SHA_DIGEST_LENGTH);
+
+    header = stringDyn_concat_new(WS_PROT_1, WS_PROT_2);
+    header = stringDyn_concat_realloc(header, WS_PROT_3);
+    header = stringDyn_concat_realloc(header, WS_PROT_4);
+    header = stringDyn_concat_realloc(header, b64);
+    header = stringDyn_concat_realloc(header, WS_NEW_LINE_SEP);
+    header = stringDyn_concat_realloc(header, WS_NEW_LINE_SEP);
+
+    free(b64);
+    free(key_head);
+    free(concat_keys);
+    b64 = NULL;
+    key_head = NULL;
+    concat_keys = NULL;
+
+    return header;
+}
+
+/**
+ * Reading and returning the handshake header received from the client
+ * Return NULL if error
+*/
+char *websocket_get_client_handshake(int client_id){
+    char *msg_read = NULL;
+    int is_read;
+
+    msg_read = (char *)malloc(WS_CLIENT_HANDSHAKE_SIZE * sizeof(char));
+    if(msg_read == NULL){
+        return NULL;
+    }
+
+    is_read = easySocket_read(client_id, msg_read, WS_CLIENT_HANDSHAKE_SIZE);
+    if(is_read){
+        return msg_read;
+    }
+    return NULL;
+}
+
+
+/**
  * Return the length of the playload data
  */
 unsigned long int websocket_playload_len_read(int client_id, byte playload){
@@ -48,7 +221,9 @@ int websocket_read_masking_key(int client_id, byte *masking_key){
     return easySocket_read(client_id, masking_key, MASKING_KEY_SIZE);
 }
 
-
+/**
+ * Return the data stored in the received datagram
+*/
 byte *websocket_read_data(int client_id, unsigned long int data_len, byte *masking_key){
     int is_read;
     byte *data = NULL;
@@ -69,20 +244,9 @@ byte *websocket_read_data(int client_id, unsigned long int data_len, byte *maski
 
     for(i = 0; i < data_len; i++){
         j = i % MASKING_KEY_SIZE;
-        // fprintf(stdout, "\n");
-        // bitByte_display(&data[i]);
-        // fprintf(stdout, "\n");
-        // bitByte_display(&masking_key[i]);
-        // fprintf(stdout, "\n");
 
         data[i] = data[i] ^ masking_key[j];
-
-
-        // bitByte_display(&data[i]);
-
-        // fprintf(stdout, "\n");
     }
-
 
     return data;
 }
@@ -129,14 +293,11 @@ byte *webSocket_read_msg(int client_id, unsigned long int *data_len){
         return NULL;
     }
 
-    fprintf(stdout, "%ld\n", *data_len);
-    
-
     return websocket_read_data(client_id, *data_len, masking_key);
 }
 
 /**
- * Generate the 8 first bit with the given opcode
+ * Generate the 8 first bit with the 4 first bits and the opcode
  */
 byte websocket_create_opcode(int fin, int rsv1, int rsv2, int rsv3, int opcode){
     byte b;
@@ -161,6 +322,7 @@ byte websocket_create_opcode(int fin, int rsv1, int rsv2, int rsv3, int opcode){
 
 /**
  * Return a valid dataframe
+ * NULL otherwise
  */
 byte *websocket_create_dataframe(unsigned long int data_len, byte *data, byte opcode, unsigned long int *dataframe_size){
     unsigned long int i;
@@ -192,11 +354,6 @@ byte *websocket_create_dataframe(unsigned long int data_len, byte *data, byte op
             return NULL;
         }
 
-        // for(i = 0; i < sizeof(unsigned long int) * 8; i++){
-        //     fprintf(stdout, "%d", bitByte_get(&data_len, i));
-        // }
-        // fprintf(stdout, "\n");
-
         /* Affecting the data size to each bytes */
         df[WS_DF_BASE_SIZE_BYTES] = bitByte_get_byte(data_len, 1);
         df[WS_DF_BASE_SIZE_BYTES + 1] = bitByte_get_byte(data_len, 0);
@@ -214,11 +371,6 @@ byte *websocket_create_dataframe(unsigned long int data_len, byte *data, byte op
             return NULL;
         }
 
-        // for(i = 0; i < sizeof(unsigned long int) * 8; i++){
-        //     fprintf(stdout, "%d", bitByte_get(&data_len, i));
-        // }
-        // fprintf(stdout, "\n");
-
         /* Affecting the data size to each bytes */
         df[WS_DF_BASE_SIZE_BYTES] = bitByte_get_byte(data_len, 7);
         df[WS_DF_BASE_SIZE_BYTES + 1] = bitByte_get_byte(data_len, 6);
@@ -234,8 +386,6 @@ byte *websocket_create_dataframe(unsigned long int data_len, byte *data, byte op
         }
     }
 
-
-    
 
     df[0] = opcode;
     df[1] = playload_len;

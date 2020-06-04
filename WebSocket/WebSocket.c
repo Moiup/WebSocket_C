@@ -435,7 +435,7 @@ int websocket_send(int sock_id, void *data, size_t size)
         return WS_NO_VAL;
     }
 
-    is_sent = websocket_send(sock_id, to_send, dataframe_size);
+    is_sent = websocket_send_dataframe(sock_id, to_send, dataframe_size);
     free(to_send);
     // Doing it with a if and not returning websocket_send in order to do a free
     if(!is_sent){

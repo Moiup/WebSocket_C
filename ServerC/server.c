@@ -30,7 +30,8 @@ int client_id;
 /**
 *
 */
-void close_server(int _n){
+void close_server(int n){
+    (void)n;
     fprintf(stdout, "Shuting down the server.\n");
     close(sock_id);
     close(client_id);
@@ -104,7 +105,7 @@ int main(){
 
     to_send_df = websocket_create_dataframe(data_len, data, opcode, &to_send_df_size);
 
-    is_sent = websocket_send(client_id, (byte *)to_send_df, to_send_df_size);
+    is_sent = websocket_send_dataframe(client_id, (byte *)to_send_df, to_send_df_size);
 
     for(i = 0; i < 5; i++){
         bitByte_display(&to_send_df[i]);

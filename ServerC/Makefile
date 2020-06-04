@@ -6,7 +6,7 @@ server_ubuntu: useful.o bitByte.o easySocket.o stringDyn.o WebSocket.o server.c
 	$(CC) $(FLAG) useful.o bitByte.o easySocket.o stringDyn.o WebSocket.o  server.c -lcrypto -o server
 
 server_mac: useful.o bitByte.o easySocket.o stringDyn.o WebSocket.o server.c
-	$(CC) $(FLAG) useful.o bitByte.o easySocket.o stringDyn.o WebSocket.o  server.c -lcrypto -o server -I /usr/local/opt/openssl/include -L /usr/local/opt/openssl/lib
+	$(CC) $(FLAG) useful.o bitByte.o easySocket.o stringDyn.o WebSocket.o  server.c -o server -I /usr/local/opt/openssl/include -L /usr/local/opt/openssl/lib -lcrypto
 
 WebSocket.o: bitByte.o stringDyn.o WebSocket/WebSocket.h WebSocket/WebSocket.c
 	$(CC) $(FLAGC) WebSocket/WebSocket.c -o WebSocket.o

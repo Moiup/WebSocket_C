@@ -102,7 +102,7 @@ char *websocket_handshake_header_response(char *request);
 /**
  * Return the length of the playload data
  */
-unsigned long int websocket_playload_len_read(int client_id, byte playload);
+size_t websocket_playload_len_read(int client_id, byte playload);
 
 /**
  * Read the bytes corresponding to the masking key and store it in masking_key
@@ -113,7 +113,7 @@ int websocket_read_masking_key(int client_id, byte *masking_key);
 /**
  * Read a websocket message
  */
-byte *webSocket_read_msg(int client_id, unsigned long int *data_len);
+byte *webSocket_read_msg(int client_id, size_t *data_len);
 
 /**
  * Generate the 8 first bit with the given opcode
@@ -123,12 +123,18 @@ byte websocket_create_opcode(int fin, int rsv1, int rsv2, int rsv3, int opcode);
 /**
  * Return a valid dataframe
  */
-byte *websocket_create_dataframe(unsigned long int data_len, byte *data, byte opcode, unsigned long int *dataframe_size);
+byte *websocket_create_dataframe(size_t data_len, byte *data, byte opcode, size_t *dataframe_size);
 
 /**
  * Send data
  * Return 0 if nothing sent
  */
-int websocket_send(int sock_id, void *data, size_t data_size);
+int websocket_send_dataframe(int sock_id, void *data, size_t data_size);
+
+/**
+ * Send a message using Websocket, no need to create an opcode and a datagramme, everything is done with this function
+ *
+*/
+int websocket_send(int sock_id, void *data, size_t size);
 
 #endif

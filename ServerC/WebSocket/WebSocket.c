@@ -224,7 +224,7 @@ int websocket_read_masking_key(int client_id, byte *masking_key){
 /**
  * Return the data stored in the received datagram
 */
-byte *websocket_read_data(int client_id, unsigned long int data_len, byte *masking_key){
+byte *websocket_read_data(int client_id, size_t data_len, byte *masking_key){
     int is_read;
     byte *data = NULL;
     unsigned long int i;
@@ -255,7 +255,7 @@ byte *websocket_read_data(int client_id, unsigned long int data_len, byte *maski
  * Read a websocket message
  * Send NULL if error ()
  */
-byte *webSocket_read_msg(int client_id, unsigned long int *data_len){
+byte *webSocket_read_msg(int client_id, size_t *data_len){
     int is_read;
     byte fin_1_2_3_opcode;
     byte mask_playload;
@@ -324,7 +324,7 @@ byte websocket_create_opcode(int fin, int rsv1, int rsv2, int rsv3, int opcode){
  * Return a valid dataframe
  * NULL otherwise
  */
-byte *websocket_create_dataframe(unsigned long int data_len, byte *data, byte opcode, unsigned long int *dataframe_size){
+byte *websocket_create_dataframe(unsigned long int data_len, byte *data, byte opcode, size_t *dataframe_size){
     unsigned long int i;
     unsigned long int j;
     *dataframe_size = BITBYTE_SIZE;
@@ -409,9 +409,38 @@ byte *websocket_create_dataframe(unsigned long int data_len, byte *data, byte op
 }
 
 /**
- * Send data
+ * Send a datagramme created with websocket_create_dataframe(unsigned long int data_len, byte *data, byte opcode, unsigned long int *dataframe_size)
  * Return 0 if nothing sent
  */
-int websocket_send(int sock_id, void *data, size_t data_size){
+int websocket_send_dataframe(int sock_id, void *data, size_t data_size){
     return send(sock_id, data, data_size, 0);
+}
+
+/**
+ * Send a message using Websocket, no need to create an opcode and a datagramme, everything is done with this function
+ *
+*/
+int websocket_send(int sock_id, void *data, size_t size)
+{
+    byte *to_send;
+    byte opcode;
+    unsigned long int dataframe_size;
+    unsigned long int is_sent;
+
+
+    opcode = websocket_create_opcode(1, 0, 0, 0, 1);
+    to_send = websocket_create_dataframe(size, (byte *)data, opcode, &dataframe_size);
+    if(to_send == NULL)
+    {
+        return WS_NO_VAL;
+    }
+
+    is_sent = websocket_send(sock_id, to_send, dataframe_size);
+    free(to_send);
+    // Doing it with a if and not returning websocket_send in order to do a free
+    if(!is_sent){
+        return WS_NO_VAL;
+    }
+
+    return is_sent;
 }

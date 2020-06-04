@@ -4,7 +4,7 @@ Websocket implementation for a C server.
 
 - [documentation](Doc/websocket-doc.md)
 
-## Dependecies
+## Dependencies
 
 - bitByte
 - easySocket

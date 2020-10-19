@@ -178,6 +178,10 @@ char *websocket_get_client_handshake(int client_id){
     if(is_read){
         return msg_read;
     }
+
+    /* Failed to read, must free the msg_read memory */
+    free(msg_read);
+
     return NULL;
 }
 
@@ -239,6 +243,8 @@ byte *websocket_read_data(int client_id, size_t data_len, byte *masking_key){
     /* Reading the data */
     is_read = easySocket_read(client_id, data, data_len);
     if(!is_read){
+        /* Fail to read, must free the allocated data memory */
+        free(data)
         return NULL;
     }
 

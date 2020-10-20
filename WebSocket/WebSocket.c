@@ -244,7 +244,7 @@ byte *websocket_read_data(int client_id, size_t data_len, byte *masking_key){
     is_read = easySocket_read(client_id, data, data_len);
     if(!is_read){
         /* Fail to read, must free the allocated data memory */
-        free(data)
+        free(data);
         return NULL;
     }
 
